@@ -6,52 +6,57 @@
   <title>Tempest Weather Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛈️</text></svg>" />
 </head>
 <body>
+  <div class="aurora aurora-1"></div>
+  <div class="aurora aurora-2"></div>
+  <div class="aurora aurora-3"></div>
 
   <!-- ====== Header ====== -->
   <header class="topbar">
-    <div class="topbar-left">
-      <div class="logo">⛈️</div>
-      <div>
-        <h1 id="station-name">Tempest Station</h1>
-        <div class="sub">
-          <span id="station-location">—</span>
-          <span class="dot-sep">·</span>
-          <span id="station-elevation">—</span>
+    <div class="topbar-inner">
+      <div class="topbar-left">
+        <div class="logo">⛈️</div>
+        <div>
+          <h1 id="station-name">Tempest Station</h1>
+          <div class="sub">
+            <span id="station-location">—</span>
+            <span class="dot-sep">·</span>
+            <span id="station-elevation">—</span>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="topbar-right">
-      <div class="live-pill" id="live-pill">
-        <span class="live-dot" id="live-dot"></span>
-        <span id="live-label">CONNECTING</span>
+      <div class="topbar-right">
+        <div class="live-pill" id="live-pill">
+          <span class="live-dot" id="live-dot"></span>
+          <span id="live-label">CONNECTING</span>
+        </div>
+        <div class="updated" id="last-updated">—</div>
+        <div class="unit-toggle" id="unit-toggle">
+          <button data-units="imperial" class="active">°F</button>
+          <button data-units="metric">°C</button>
+        </div>
+        <button class="icon-btn" id="settings-btn" title="Settings">⚙️</button>
       </div>
-      <div class="updated" id="last-updated">—</div>
-      <div class="unit-toggle" id="unit-toggle">
-        <button data-units="imperial" class="active">°F</button>
-        <button data-units="metric">°C</button>
-      </div>
-      <button class="icon-btn" id="settings-btn" title="Settings">⚙️</button>
     </div>
   </header>
 
   <main>
 
-    <!-- ====== Hero: current conditions ====== -->
-    <section class="hero">
+    <!-- ====== Bento hero ====== -->
+    <section class="bento">
+
       <div class="card hero-temp">
         <div class="hero-icon" id="cc-icon">—</div>
-        <div class="hero-main">
-          <div class="big-temp"><span id="cc-temp">--</span><span class="deg" id="cc-temp-unit">°F</span></div>
-          <div class="cond-text" id="cc-conditions">Loading…</div>
-          <div class="feels" >Feels like <strong id="cc-feels">--°</strong></div>
-        </div>
+        <div class="big-temp"><span id="cc-temp">--</span><span class="deg" id="cc-temp-unit">°F</span></div>
+        <div class="cond-text" id="cc-conditions">Loading…</div>
+        <div class="feels">Feels like <strong id="cc-feels">--°</strong></div>
         <div class="hero-hilo">
           <div><span class="hilo-label">High</span><span id="cc-high">--°</span></div>
+          <div class="hilo-divider"></div>
           <div><span class="hilo-label">Low</span><span id="cc-low">--°</span></div>
         </div>
       </div>
@@ -85,42 +90,43 @@
 
       <div class="metric-grid">
         <div class="card metric">
-          <div class="m-icon">💧</div>
-          <div class="m-label">Humidity</div>
+          <div class="m-top"><span class="m-icon">💧</span><span class="m-label">Humidity</span></div>
           <div class="m-value"><span id="cc-humidity">--</span><small>%</small></div>
           <div class="m-extra">Dew point <span id="cc-dewpoint">--°</span></div>
+          <canvas class="spark" id="spark-humidity"></canvas>
         </div>
         <div class="card metric">
-          <div class="m-icon">🌡️</div>
-          <div class="m-label">Pressure</div>
+          <div class="m-top"><span class="m-icon">🌡️</span><span class="m-label">Pressure</span></div>
           <div class="m-value"><span id="cc-pressure">--</span><small id="cc-pressure-unit">inHg</small></div>
           <div class="m-extra" id="cc-pressure-trend">—</div>
+          <canvas class="spark" id="spark-pressure"></canvas>
         </div>
         <div class="card metric">
-          <div class="m-icon">🌧️</div>
-          <div class="m-label">Rain Today</div>
+          <div class="m-top"><span class="m-icon">🌧️</span><span class="m-label">Rain Today</span></div>
           <div class="m-value"><span id="cc-rain">--</span><small id="cc-rain-unit">in</small></div>
           <div class="m-extra">Yesterday <span id="cc-rain-yest">--</span></div>
+          <canvas class="spark" id="spark-rain"></canvas>
         </div>
         <div class="card metric">
-          <div class="m-icon">☀️</div>
-          <div class="m-label">UV Index</div>
+          <div class="m-top"><span class="m-icon">☀️</span><span class="m-label">UV Index</span></div>
           <div class="m-value"><span id="cc-uv">--</span></div>
           <div class="m-extra" id="cc-uv-desc">—</div>
+          <canvas class="spark" id="spark-uv"></canvas>
         </div>
         <div class="card metric">
-          <div class="m-icon">🔆</div>
-          <div class="m-label">Solar Radiation</div>
+          <div class="m-top"><span class="m-icon">🔆</span><span class="m-label">Solar</span></div>
           <div class="m-value"><span id="cc-solar">--</span><small>W/m²</small></div>
           <div class="m-extra"><span id="cc-brightness">--</span> lux</div>
+          <canvas class="spark" id="spark-solar"></canvas>
         </div>
         <div class="card metric">
-          <div class="m-icon">⚡</div>
-          <div class="m-label">Lightning (3h)</div>
+          <div class="m-top"><span class="m-icon">⚡</span><span class="m-label">Lightning 3h</span></div>
           <div class="m-value"><span id="cc-lightning">--</span></div>
           <div class="m-extra" id="cc-lightning-dist">—</div>
+          <canvas class="spark" id="spark-lightning"></canvas>
         </div>
       </div>
+
     </section>
 
     <!-- ====== Forecast ====== -->
@@ -137,10 +143,18 @@
       </div>
     </section>
 
-    <!-- ====== History ====== -->
-    <section class="history-section">
+    <!-- ====== History: one big tabbed chart ====== -->
+    <section class="card history-card">
       <div class="section-head">
         <h2>History</h2>
+        <div class="seg-toggle" id="chart-tabs">
+          <button data-kind="temp" class="active">🌡️ Temp</button>
+          <button data-kind="wind">💨 Wind</button>
+          <button data-kind="pressure">📉 Pressure</button>
+          <button data-kind="rain">🌧️ Rain</button>
+          <button data-kind="solar">☀️ Solar</button>
+          <button data-kind="lightning">⚡ Lightning</button>
+        </div>
         <div class="seg-toggle" id="range-toggle">
           <button data-range="1">24H</button>
           <button data-range="3" class="active">3D</button>
@@ -150,15 +164,8 @@
           <button data-range="365">1Y</button>
         </div>
       </div>
+      <div class="chart-box-lg"><canvas id="chart-main"></canvas></div>
       <div class="hint">Scroll to zoom · drag to pan · double-click to reset</div>
-      <div class="chart-grid" id="chart-grid">
-        <div class="card chart-card"><h3>Temperature &amp; Humidity</h3><div class="chart-box"><canvas id="chart-temp"></canvas></div></div>
-        <div class="card chart-card"><h3>Wind</h3><div class="chart-box"><canvas id="chart-wind"></canvas></div></div>
-        <div class="card chart-card"><h3>Barometric Pressure</h3><div class="chart-box"><canvas id="chart-pressure"></canvas></div></div>
-        <div class="card chart-card"><h3>Rainfall</h3><div class="chart-box"><canvas id="chart-rain"></canvas></div></div>
-        <div class="card chart-card"><h3>Solar &amp; UV</h3><div class="chart-box"><canvas id="chart-solar"></canvas></div></div>
-        <div class="card chart-card"><h3>Lightning Strikes</h3><div class="chart-box"><canvas id="chart-lightning"></canvas></div></div>
-      </div>
       <div class="loading-overlay" id="history-loading" hidden><div class="spinner"></div><span>Loading history…</span></div>
     </section>
 

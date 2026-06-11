@@ -20,6 +20,7 @@
     closeSocket: null,
     historyDays: 3,
     historyRows: [],
+    sparkRows: [],
     forecast: null,
     forecastMode: "daily",
     lastStationObs: null,
@@ -35,6 +36,31 @@
     "windy": "💨",
   };
   const icon = (name) => ICONS[name] || "🌡️";
+
+  /* staggered card entrance */
+  document.querySelectorAll(".bento .card").forEach((el, i) =>
+    el.style.setProperty("--i", i));
+
+  /* ============ Animated number transitions ============ */
+  const tweens = new Map();
+  function animateNumber(el, target, decimals) {
+    if (target == null || Number.isNaN(target)) { el.textContent = "--"; return; }
+    const from = parseFloat(el.textContent);
+    if (Number.isNaN(from) || from === target) {
+      el.textContent = target.toFixed(decimals);
+      return;
+    }
+    cancelAnimationFrame(tweens.get(el));
+    const t0 = performance.now();
+    const DUR = 650;
+    const step = (t) => {
+      const p = Math.min((t - t0) / DUR, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = (from + (target - from) * eased).toFixed(decimals);
+      if (p < 1) tweens.set(el, requestAnimationFrame(step));
+    };
+    tweens.set(el, requestAnimationFrame(step));
+  }
 
   /* ============ Setup modal ============ */
   function showModal(errorMsg) {
@@ -95,7 +121,7 @@
   /** Render from the station observation object (named fields, metric). */
   function renderStationObs(obs) {
     state.lastStationObs = obs;
-    $("cc-temp").textContent = Units.format("temp", obs.air_temperature);
+    animateNumber($("cc-temp"), Units.convert("temp", obs.air_temperature), Units.system === "imperial" ? 0 : 1);
     $("cc-temp-unit").textContent = Units.label("temp");
     $("cc-feels").textContent = Units.format("temp", obs.feels_like) + "°";
     $("cc-humidity").textContent = Units.fmt(obs.relative_humidity, 0);
@@ -125,7 +151,7 @@
       barometric_pressure: o[6], air_temperature: o[7], relative_humidity: o[8],
       brightness: o[9], uv: o[10], solar_radiation: o[11],
     };
-    // sea-level pressure & feels-like need server-side calc; refresh those via REST below
+    // sea-level pressure & feels-like need server-side calc; the 60s REST refresh fills those
     renderStationObs(mapped);
   }
 
@@ -135,7 +161,7 @@
     $("wind-lull").textContent = Units.format("wind", lull);
     $("wind-dir").textContent = dir != null ? `${degToCardinal(dir)} ${Math.round(dir)}°` : "--";
     $("wind-unit").textContent = Units.label("wind");
-    if (avg != null) $("wind-speed").textContent = Units.format("wind", avg, avg < 10 ? 1 : 0);
+    if (avg != null) $("wind-speed").textContent = Units.format("wind", avg, avg * 2.23694 < 10 ? 1 : 0);
     if (dir != null) $("needle").style.transform = `rotate(${dir}deg)`;
   }
 
@@ -146,19 +172,71 @@
     $("wind-dir").textContent = `${degToCardinal(dirDeg)} ${Math.round(dirDeg)}°`;
   }
 
+  /* ============ Sparklines (last 24h, drawn on tiny canvases) ============ */
+  function drawSpark(canvasId, values, color) {
+    const c = $(canvasId);
+    if (!c) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = c.clientWidth || 120, h = c.clientHeight || 30;
+    c.width = w * dpr; c.height = h * dpr;
+    const ctx = c.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    const vals = values.map((v) => (v == null ? 0 : v));
+    if (vals.length < 2) return;
+    let min = Math.min(...vals), max = Math.max(...vals);
+    if (max === min) { max += 1; min -= 1; }
+    const x = (i) => (i / (vals.length - 1)) * w;
+    const y = (v) => h - 3 - ((v - min) / (max - min)) * (h - 6);
+
+    ctx.beginPath();
+    vals.forEach((v, i) => i === 0 ? ctx.moveTo(x(i), y(v)) : ctx.lineTo(x(i), y(v)));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.6;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+
+    ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, color.replace("rgb", "rgba").replace(")", ",0.28)"));
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+
+  function drawSparklines() {
+    const rows = state.sparkRows;
+    if (!rows.length) return;
+    const series = (idx) => rows.map((r) => r[idx]);
+    let rainSum = 0;
+    const rainCumulative = rows.map((r) => (rainSum += r[12] || 0));
+    drawSpark("spark-humidity", series(8), "rgb(167,139,250)");
+    drawSpark("spark-pressure", series(6), "rgb(244,114,182)");
+    drawSpark("spark-rain", rainCumulative, "rgb(56,189,248)");
+    drawSpark("spark-uv", series(10), "rgb(251,191,36)");
+    drawSpark("spark-solar", series(11), "rgb(251,191,36)");
+    drawSpark("spark-lightning", series(15), "rgb(251,191,36)");
+  }
+
+  let resizeTimer;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(drawSparklines, 200);
+  });
+
   /* ============ Forecast ============ */
   function renderForecast() {
     const strip = $("forecast-strip");
     const fc = state.forecast;
     if (!fc) { strip.innerHTML = '<div class="placeholder">Forecast unavailable</div>'; return; }
 
-    // Hero condition summary comes from forecast current_conditions
     const cc = fc.current_conditions;
     if (cc) {
       $("cc-icon").textContent = icon(cc.icon);
       $("cc-conditions").textContent = cc.conditions || "—";
       $("cc-pressure-trend").textContent = cc.pressure_trend
-        ? cc.pressure_trend[0].toUpperCase() + cc.pressure_trend.slice(1)
+        ? "Trend: " + cc.pressure_trend[0].toUpperCase() + cc.pressure_trend.slice(1)
         : "—";
     }
     const today = fc.forecast?.daily?.[0];
@@ -169,24 +247,24 @@
 
     if (state.forecastMode === "daily") {
       const days = fc.forecast?.daily || [];
-      strip.innerHTML = days.slice(0, 10).map((d) => {
-        const day = new Date(d.day_start_local * 1000).toLocaleDateString([], { weekday: "short" });
-        return `<div class="fc-card">
+      strip.innerHTML = days.slice(0, 10).map((d, i) => {
+        const day = i === 0 ? "Today" : new Date(d.day_start_local * 1000).toLocaleDateString([], { weekday: "short" });
+        return `<div class="fc-card${i === 0 ? " today" : ""}">
           <div class="fc-day">${day}</div>
           <div class="fc-icon">${icon(d.icon)}</div>
           <div class="fc-temps">${Units.format("temp", d.air_temp_high)}° <span class="lo">${Units.format("temp", d.air_temp_low)}°</span></div>
-          <div class="fc-precip">${d.precip_probability != null ? "💧 " + d.precip_probability + "%" : "&nbsp;"}</div>
+          <div class="fc-precip">${d.precip_probability ? "💧 " + d.precip_probability + "%" : "&nbsp;"}</div>
         </div>`;
       }).join("");
     } else {
       const hours = fc.forecast?.hourly || [];
-      strip.innerHTML = hours.slice(0, 24).map((h) => {
-        const hr = new Date(h.time * 1000).toLocaleTimeString([], { hour: "numeric" });
-        return `<div class="fc-card">
+      strip.innerHTML = hours.slice(0, 24).map((h, i) => {
+        const hr = i === 0 ? "Now" : new Date(h.time * 1000).toLocaleTimeString([], { hour: "numeric" });
+        return `<div class="fc-card${i === 0 ? " today" : ""}">
           <div class="fc-day">${hr}</div>
           <div class="fc-icon">${icon(h.icon)}</div>
           <div class="fc-temps">${Units.format("temp", h.air_temperature)}°</div>
-          <div class="fc-precip">${h.precip_probability != null ? "💧 " + h.precip_probability + "%" : "&nbsp;"}</div>
+          <div class="fc-precip">${h.precip_probability ? "💧 " + h.precip_probability + "%" : "&nbsp;"}</div>
         </div>`;
       }).join("");
     }
@@ -208,20 +286,37 @@
       const end = Math.floor(Date.now() / 1000);
       const start = end - state.historyDays * 86400;
       let rows = await TempestAPI.getDeviceHistory(state.deviceId, store.token, start, end);
-      // keep chart point counts sane on long ranges
       const MAX_POINTS = 1500;
       if (rows.length > MAX_POINTS) {
         const step = Math.ceil(rows.length / MAX_POINTS);
         rows = rows.filter((_, i) => i % step === 0);
       }
       state.historyRows = rows;
-      Charts.render(rows);
+      Charts.setData(rows);
     } catch (e) {
       console.error("History load failed:", e);
     } finally {
       $("history-loading").hidden = true;
     }
   }
+
+  async function loadSparklines() {
+    if (!state.deviceId) return;
+    try {
+      const end = Math.floor(Date.now() / 1000);
+      state.sparkRows = await TempestAPI.getDeviceHistory(state.deviceId, store.token, end - 86400, end);
+      drawSparklines();
+    } catch (e) {
+      console.error("Sparkline load failed:", e);
+    }
+  }
+
+  $("chart-tabs").onclick = (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    [...$("chart-tabs").children].forEach((b) => b.classList.toggle("active", b === btn));
+    Charts.show(btn.dataset.kind);
+  };
 
   $("range-toggle").onclick = (e) => {
     const btn = e.target.closest("button");
@@ -240,7 +335,7 @@
     [...$("unit-toggle").children].forEach((b) => b.classList.toggle("active", b === btn));
     if (state.lastStationObs) renderStationObs(state.lastStationObs);
     renderForecast();
-    Charts.render(state.historyRows);
+    Charts.setData(state.historyRows);
   };
 
   /* ============ Compass tick marks ============ */
@@ -308,6 +403,7 @@
     refreshCurrent();
     refreshForecast();
     loadHistory();
+    loadSparklines();
 
     // Live feed + periodic REST refresh (REST supplies derived fields like
     // feels-like and sea-level pressure that the raw device obs lack).
@@ -320,6 +416,7 @@
     }
     setInterval(refreshCurrent, 60_000);
     setInterval(refreshForecast, 15 * 60_000);
+    setInterval(loadSparklines, 10 * 60_000);
   }
 
   if (store.token) {
