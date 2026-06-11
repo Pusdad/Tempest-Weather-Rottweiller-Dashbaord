@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tempest Weather Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛈️</text></svg>" />
+</head>
+<body>
+
+  <!-- ====== Header ====== -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo">⛈️</div>
+      <div>
+        <h1 id="station-name">Tempest Station</h1>
+        <div class="sub">
+          <span id="station-location">—</span>
+          <span class="dot-sep">·</span>
+          <span id="station-elevation">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-pill" id="live-pill">
+        <span class="live-dot" id="live-dot"></span>
+        <span id="live-label">CONNECTING</span>
+      </div>
+      <div class="updated" id="last-updated">—</div>
+      <div class="unit-toggle" id="unit-toggle">
+        <button data-units="imperial" class="active">°F</button>
+        <button data-units="metric">°C</button>
+      </div>
+      <button class="icon-btn" id="settings-btn" title="Settings">⚙️</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ====== Hero: current conditions ====== -->
+    <section class="hero">
+      <div class="card hero-temp">
+        <div class="hero-icon" id="cc-icon">—</div>
+        <div class="hero-main">
+          <div class="big-temp"><span id="cc-temp">--</span><span class="deg" id="cc-temp-unit">°F</span></div>
+          <div class="cond-text" id="cc-conditions">Loading…</div>
+          <div class="feels" >Feels like <strong id="cc-feels">--°</strong></div>
+        </div>
+        <div class="hero-hilo">
+          <div><span class="hilo-label">High</span><span id="cc-high">--°</span></div>
+          <div><span class="hilo-label">Low</span><span id="cc-low">--°</span></div>
+        </div>
+      </div>
+
+      <div class="card wind-card">
+        <h3>Wind <span class="live-tag" id="wind-live-tag">LIVE · 3s</span></h3>
+        <div class="compass-wrap">
+          <svg id="compass" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="92" class="compass-ring"/>
+            <g id="compass-ticks"></g>
+            <text x="100" y="26" class="compass-cardinal">N</text>
+            <text x="180" y="105" class="compass-cardinal">E</text>
+            <text x="100" y="186" class="compass-cardinal">S</text>
+            <text x="20" y="105" class="compass-cardinal">W</text>
+            <g id="needle" class="needle">
+              <polygon points="100,18 94,52 106,52" class="needle-head"/>
+              <polygon points="100,182 95,150 105,150" class="needle-tail"/>
+            </g>
+            <circle cx="100" cy="100" r="46" class="compass-center"/>
+            <text x="100" y="96" class="compass-speed" id="wind-speed">--</text>
+            <text x="100" y="116" class="compass-unit" id="wind-unit">mph</text>
+          </svg>
+        </div>
+        <div class="wind-stats">
+          <div><span class="ws-label">Lull</span><span id="wind-lull">--</span></div>
+          <div><span class="ws-label">Avg</span><span id="wind-avg">--</span></div>
+          <div><span class="ws-label">Gust</span><span id="wind-gust">--</span></div>
+          <div><span class="ws-label">Dir</span><span id="wind-dir">--</span></div>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <div class="card metric">
+          <div class="m-icon">💧</div>
+          <div class="m-label">Humidity</div>
+          <div class="m-value"><span id="cc-humidity">--</span><small>%</small></div>
+          <div class="m-extra">Dew point <span id="cc-dewpoint">--°</span></div>
+        </div>
+        <div class="card metric">
+          <div class="m-icon">🌡️</div>
+          <div class="m-label">Pressure</div>
+          <div class="m-value"><span id="cc-pressure">--</span><small id="cc-pressure-unit">inHg</small></div>
+          <div class="m-extra" id="cc-pressure-trend">—</div>
+        </div>
+        <div class="card metric">
+          <div class="m-icon">🌧️</div>
+          <div class="m-label">Rain Today</div>
+          <div class="m-value"><span id="cc-rain">--</span><small id="cc-rain-unit">in</small></div>
+          <div class="m-extra">Yesterday <span id="cc-rain-yest">--</span></div>
+        </div>
+        <div class="card metric">
+          <div class="m-icon">☀️</div>
+          <div class="m-label">UV Index</div>
+          <div class="m-value"><span id="cc-uv">--</span></div>
+          <div class="m-extra" id="cc-uv-desc">—</div>
+        </div>
+        <div class="card metric">
+          <div class="m-icon">🔆</div>
+          <div class="m-label">Solar Radiation</div>
+          <div class="m-value"><span id="cc-solar">--</span><small>W/m²</small></div>
+          <div class="m-extra"><span id="cc-brightness">--</span> lux</div>
+        </div>
+        <div class="card metric">
+          <div class="m-icon">⚡</div>
+          <div class="m-label">Lightning (3h)</div>
+          <div class="m-value"><span id="cc-lightning">--</span></div>
+          <div class="m-extra" id="cc-lightning-dist">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== Forecast ====== -->
+    <section class="card forecast-section">
+      <div class="section-head">
+        <h2>Forecast</h2>
+        <div class="seg-toggle" id="forecast-toggle">
+          <button data-mode="daily" class="active">10-Day</button>
+          <button data-mode="hourly">Hourly</button>
+        </div>
+      </div>
+      <div class="forecast-strip" id="forecast-strip">
+        <div class="placeholder">Loading forecast…</div>
+      </div>
+    </section>
+
+    <!-- ====== History ====== -->
+    <section class="history-section">
+      <div class="section-head">
+        <h2>History</h2>
+        <div class="seg-toggle" id="range-toggle">
+          <button data-range="1">24H</button>
+          <button data-range="3" class="active">3D</button>
+          <button data-range="7">7D</button>
+          <button data-range="30">30D</button>
+          <button data-range="90">90D</button>
+          <button data-range="365">1Y</button>
+        </div>
+      </div>
+      <div class="hint">Scroll to zoom · drag to pan · double-click to reset</div>
+      <div class="chart-grid" id="chart-grid">
+        <div class="card chart-card"><h3>Temperature &amp; Humidity</h3><div class="chart-box"><canvas id="chart-temp"></canvas></div></div>
+        <div class="card chart-card"><h3>Wind</h3><div class="chart-box"><canvas id="chart-wind"></canvas></div></div>
+        <div class="card chart-card"><h3>Barometric Pressure</h3><div class="chart-box"><canvas id="chart-pressure"></canvas></div></div>
+        <div class="card chart-card"><h3>Rainfall</h3><div class="chart-box"><canvas id="chart-rain"></canvas></div></div>
+        <div class="card chart-card"><h3>Solar &amp; UV</h3><div class="chart-box"><canvas id="chart-solar"></canvas></div></div>
+        <div class="card chart-card"><h3>Lightning Strikes</h3><div class="chart-box"><canvas id="chart-lightning"></canvas></div></div>
+      </div>
+      <div class="loading-overlay" id="history-loading" hidden><div class="spinner"></div><span>Loading history…</span></div>
+    </section>
+
+  </main>
+
+  <footer>
+    <span>Data: <a href="https://tempestwx.com/station/49085" target="_blank" rel="noopener">Tempest Station 49085</a> via WeatherFlow API</span>
+  </footer>
+
+  <!-- ====== Settings / token modal ====== -->
+  <div class="modal-backdrop" id="setup-modal" hidden>
+    <div class="modal">
+      <h2>⛈️ Connect to your Tempest</h2>
+      <p>This dashboard reads your station data straight from the WeatherFlow API. It needs a free <strong>Personal Access Token</strong>:</p>
+      <ol>
+        <li>Sign in at <a href="https://tempestwx.com/settings/tokens" target="_blank" rel="noopener">tempestwx.com/settings/tokens</a></li>
+        <li>Click <em>Create Token</em>, give it a name (e.g. "Dashboard")</li>
+        <li>Copy the token and paste it below</li>
+      </ol>
+      <p class="modal-note">The token is stored only in this browser (localStorage). It never leaves your machine except to call the WeatherFlow API directly.</p>
+      <label>Personal Access Token
+        <input type="text" id="token-input" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" />
+      </label>
+      <label>Station ID
+        <input type="text" id="station-input" value="49085" />
+      </label>
+      <div class="modal-error" id="modal-error" hidden></div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="save-settings">Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js + time adapter + zoom plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.5.0/build/global/luxon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
+
+  <script src="js/api.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
