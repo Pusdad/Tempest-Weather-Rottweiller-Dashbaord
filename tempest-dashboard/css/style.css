@@ -289,6 +289,45 @@ footer {
   font-size: 0.74rem; color: var(--text-dim); text-align: center;
 }
 
+/* ============ Rottie ============ */
+#rottie {
+  position: fixed; bottom: 4px; left: 0; width: 175px; z-index: 90;
+  pointer-events: none; transform: translateX(-1500px);
+  filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.45));
+}
+#rottie.running { pointer-events: auto; cursor: pointer; }
+#rottie svg { display: block; width: 100%; }
+#rottie .leg { transform-box: fill-box; transform-origin: 50% 8%; }
+#rottie .tail { transform-box: fill-box; transform-origin: 90% 50%; }
+#rottie .bob, #rottie .tongue { transform-box: fill-box; transform-origin: 50% 50%; }
+#rottie.running .l-bn { animation: gallop-b 0.32s ease-in-out infinite alternate; }
+#rottie.running .l-bf { animation: gallop-b 0.32s ease-in-out infinite alternate -0.16s; }
+#rottie.running .l-fn { animation: gallop-f 0.32s ease-in-out infinite alternate -0.08s; }
+#rottie.running .l-ff { animation: gallop-f 0.32s ease-in-out infinite alternate -0.24s; }
+#rottie.running .bob  { animation: dog-bob 0.32s ease-in-out infinite alternate; }
+#rottie.running .tail { animation: tail-wag 0.24s ease-in-out infinite alternate; }
+#rottie.running .tongue { animation: tongue-flap 0.32s ease-in-out infinite alternate; }
+@keyframes gallop-b { from { transform: rotate(32deg); }  to { transform: rotate(-26deg); } }
+@keyframes gallop-f { from { transform: rotate(-30deg); } to { transform: rotate(26deg); } }
+@keyframes dog-bob  { from { transform: translateY(0); }  to { transform: translateY(-6px); } }
+@keyframes tail-wag { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
+@keyframes tongue-flap { from { transform: scaleY(0.8); } to { transform: scaleY(1.15); } }
+
+#rottie .woof {
+  position: absolute; top: -34px; left: 50%;
+  transform: translateX(-50%) scale(0);
+  background: #fff; color: #0a0f1e;
+  font-weight: 900; font-size: 0.82rem; letter-spacing: 0.04em;
+  padding: 7px 14px; border-radius: 14px;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none; white-space: nowrap;
+}
+#rottie .woof::after {
+  content: ""; position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);
+  border: 8px solid transparent; border-top-color: #fff; border-bottom: 0;
+}
+#rottie .woof.show { transform: translateX(-50%) scale(1); }
+
 /* ============ Modal ============ */
 .modal-backdrop {
   position: fixed; inset: 0; z-index: 100;
